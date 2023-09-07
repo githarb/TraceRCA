@@ -5,8 +5,10 @@ OUTPUT := $(ROOT)/output
 # ORIGIN_DATA_DIR := $(ROOT)/tracerca-exp/data/
 ORIGIN_DATA_DIR := $(ROOT)/tracerca-exp/data/
 ROOT_CAUSE_DIR := $(ORIGIN_DATA_DIR)/root_causes/
-SCRIPT_DIR := $(ROOT)/tracerca-exp
-CONFIG_SCRIPTS := $(ROOT)/tracerca-exp/trainticket_config.py
+# SCRIPT_DIR := $(ROOT)/tracerca-exp
+# CONFIG_SCRIPTS := $(ROOT)/tracerca-exp/trainticket_config.py
+SCRIPT_DIR := /
+CONFIG_SCRIPTS := /trainticket_config.py
 UPDATE_CACHE_FLAG :=
 
 
@@ -25,15 +27,20 @@ FISHER = 3
 K = 100
 
 
+# test 的结果路径
+# notdir返回所有的文件名
+# basename去掉后缀
 INVO_TEST_FILE_RESULTS = $(addprefix $(OUTPUT)/trainticket_anomaly_detection.test/,$(addsuffix .invo.result.pkl.$(SIGMA).$(FISHER),$(basename $(notdir $(TEST_FILES)))))
 TRACE_TEST_FILE_RESULTS = $(addprefix $(OUTPUT)/trainticket_anomaly_detection.test/,$(addsuffix .trace.result.pkl.$(DROP_SERVICE).$(DROP_FAULT_TYPE),$(basename $(notdir $(TEST_FILES)))))
 
+# 异常检测与错误定位的结果 文件路径
 ANOMALY_DETECTION_RESULT = $(OUTPUT)/trainticket.anomaly_detection.result.csv.$(DROP_SERVICE).$(DROP_FAULT_TYPE).$(SIGMA).$(FISHER)
 FAULT_LOCALIZATION_RESULT = $(OUTPUT)/trainticket.root_cause_localization.result.csv.$(DROP_SERVICE).$(DROP_FAULT_TYPE).$(SUPPORT).$(K)
-
+# 定位效果的文件路径
 EFFECT_OF_TRACE_LOCALIZATION_RESULT = $(OUTPUT)/trainticket.root_cause_localization.effect_of_trace.result.csv.$(DROP_SERVICE).$(DROP_FAULT_TYPE)
-
+# 异常检测模型文件路径
 ANOMALY_DETECTION_MODEL = $(OUTPUT)/trainticket_anomaly_detection.models.$(DROP_SERVICE).$(DROP_FAULT_TYPE)
+# trace历史数据的路径
 TRACE_HISTORICAL_DATA = $(OUTPUT)/trainticket_trace_encoded/trainticket_historical_all.trace.$(DROP_SERVICE).$(DROP_FAULT_TYPE).npz
 INVO_HISTORICAL_DATA = $(OUTPUT)/trainticket_invo_encoded/trainticket_historical_normal.invo.pkl
 
@@ -49,7 +56,8 @@ ASSOCIATION_RULE_MINING_TEST_FILE_RESULTS_EFFECT_OF_TRACE = $(addprefix $(OUTPUT
 # keep all temporary files
 .SECONDARY:
 
-
+# When you run make target, it will execute the recipes associated with this target.
+# The actual recipes (commands) to execute should be defined elsewhere in the Makefile.
 .PHONY: target
 target: $(ANOMALY_DETECTION_RESULT) $(FAULT_LOCALIZATION_RESULT) ;
 
@@ -62,12 +70,17 @@ models: $(LOCALIZATION_MODEL) $(ANOMALY_DETECTION_MODEL) ;
 .PHONY: localization
 localization: $(FAULT_LOCALIZATION_RESULT) ;
 
-.PHONY: ad
-ad: $(ANOMALY_DETECTION_RESULT) ;
+.PHONY: anomaly-detection
+anomaly-detection: $(ANOMALY_DETECTION_RESULT) ;
 
-
+# 包含文件依赖
 .PHONY: dataset-summary
-dataset-summary: $(addprefix $(OUTPUT)/trainticket_trace_encoded/,$(addsuffix .trace.$(DROP_SERVICE).$(DROP_FAULT_TYPE).npz,$(basename $(notdir $(TEST_FILES))))) $(addprefix $(OUTPUT)/trainticket_invo_encoded/,$(addsuffix .invo.pkl,$(basename $(notdir $(TEST_FILES))))) $(INVO_HISTORICAL_DATA) $(TRACE_HISTORICAL_DATA) $(SCRIPT_DIR)/run_dataset_summary.py
+dataset-summary: \
+	$(addprefix $(OUTPUT)/trainticket_trace_encoded/,$(addsuffix .trace.$(DROP_SERVICE).$(DROP_FAULT_TYPE).npz,$(basename $(notdir $(TEST_FILES))))) \
+	$(addprefix $(OUTPUT)/trainticket_invo_encoded/,$(addsuffix .invo.pkl,$(basename $(notdir $(TEST_FILES))))) \
+	$(INVO_HISTORICAL_DATA) \
+	$(TRACE_HISTORICAL_DATA) \
+	$(SCRIPT_DIR)/run_dataset_summary.py
 	echo $(filter %.invo.pkl,$INVO_HISTORICAL_DATA)
 	python run_dataset_summary.py \
 		$(addprefix -i ",$(addsuffix ",$(filter %.trace.$(DROP_SERVICE).$(DROP_FAULT_TYPE).npz,$^))) \
@@ -92,7 +105,10 @@ debug:
 	echo ANOMALY_DETECTION_RESULT $(ANOMALY_DETECTION_RESULT)
 
 
-# anomaly detection result
+#anomaly detection result
+#defines a target for generating an "anomaly detection result" ($(ANOMALY_DETECTION_RESULT)).
+#This target depends on several prerequisites, and when invoked, it runs a Python script to collect the result.
+#变量在前面已经定义过了，这里是定义怎么生成
 $(ANOMALY_DETECTION_RESULT):$(INVO_TEST_FILE_RESULTS) $(TRACE_TEST_FILE_RESULTS) $(SCRIPT_DIR)/run_anomaly_detection_collect_result.py $(CONFIG_SCRIPTS)
 	python run_anomaly_detection_collect_result.py \
 		$(addprefix -i ",$(addsuffix ",$(INVO_TEST_FILE_RESULTS))) \

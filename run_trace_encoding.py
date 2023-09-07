@@ -9,7 +9,7 @@ from pathlib import Path
 from loguru import logger
 from tqdm import tqdm
 
-from data.trainticket.download import simple_name
+from simple_name import simple_name
 from trainticket_config import *
 
 """
